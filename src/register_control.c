@@ -20,7 +20,7 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
   int word_size = 8;
   if (buf == NULL)
     log_and_exit("Failed to malloc\n");
-    if (stage_buf == NULL)
+  if (stage_buf == NULL)
     log_and_exit("Failed to malloc\n");
   memset(buf, '\x00', 1024);
 
@@ -42,17 +42,17 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
 
         ptr = buf;
         while (addr_in_main_binary(buf_chunk) ||
-            addr_in_stack_or_heap(buf_chunk)) {
+               addr_in_stack_or_heap(buf_chunk)) {
 
-          snprintf(stage_buf, 1024, "0x%lx -> ",buf_chunk);
+          snprintf(stage_buf, 1024, "0x%lx -> ", buf_chunk);
           memcpy(ptr, stage_buf, strlen(stage_buf));
           ptr += strlen(stage_buf);
           extra_size += strlen(stage_buf);
           stack_argument = buf_chunk;
-                  if (is_32_bit)
+          if (is_32_bit)
             buf_chunk = buf_chunk & 0xFFFFFFFF;
           buf_chunk = ptrace(PTRACE_PEEKTEXT, child_pid, stack_argument, 0);
-          memset(stage_buf, '\x00',1024);
+          memset(stage_buf, '\x00', 1024);
         }
 
         /*
@@ -98,29 +98,27 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
     regs_dump[1] = regs->rsi;
     regs_dump[2] = regs->rdx;
     regs_dump[3] = regs->rcx;
-    char *names[4] = {"RDI", "RSI", "RDX","RCX"};
+    char *names[4] = {"RDI", "RSI", "RDX", "RCX"};
     for (i = 0; i < 4; i++) {
       extra_size = 0;
       addr = regs_dump[i];
-      if (addr_in_main_binary(addr) ||
-          addr_in_stack_or_heap(addr)) {
+      if (addr_in_main_binary(addr) || addr_in_stack_or_heap(addr)) {
         buf_chunk = ptrace(PTRACE_PEEKTEXT, child_pid, addr, 0);
         ptr = buf;
 
         // While a valid ptr, keep dereferencing
         while (addr_in_main_binary(buf_chunk) ||
-            addr_in_stack_or_heap(buf_chunk)) {
+               addr_in_stack_or_heap(buf_chunk)) {
 
-          snprintf(stage_buf, 1024, "0x%lx -> ",buf_chunk);
+          snprintf(stage_buf, 1024, "0x%lx -> ", buf_chunk);
           memcpy(ptr, stage_buf, strlen(stage_buf));
           ptr += strlen(stage_buf);
           extra_size += strlen(stage_buf);
           addr = buf_chunk;
           buf_chunk = ptrace(PTRACE_PEEKTEXT, child_pid, addr, 0);
-          memset(stage_buf, '\x00',1024);
+          memset(stage_buf, '\x00', 1024);
         }
 
-        
         /*
          * While there is more printable character, keep
          * reading from the child process
@@ -131,8 +129,8 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
           memcpy(ptr, &buf_chunk, word_size);
 
           ptr += word_size;
-          buf_chunk =
-              ptrace(PTRACE_PEEKTEXT, child_pid, addr + (ptr - buf - extra_size), 0);
+          buf_chunk = ptrace(PTRACE_PEEKTEXT, child_pid,
+                             addr + (ptr - buf - extra_size), 0);
         }
         memcpy(ptr, &buf_chunk, strlen((char *)&buf_chunk));
 
