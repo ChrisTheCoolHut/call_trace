@@ -77,6 +77,7 @@ void get_main_binary_addresses(char *prog_name, pid_t pid) {
   fclose(fp);
   if (line)
     free(line);
+  if (buf) free(buf);
   printf("[~] Binary is mapped from 0x%lx to 0x%lx\n", main_bin_start_addr,
          main_bin_end_addr);
 }
@@ -99,6 +100,8 @@ bool is_proc_32_bit(pid_t pid) {
   read(fd, &bitness, 1);
 
   close(fd);
+
+  if (buf) free(buf);
 
   return bitness == 1;
 }

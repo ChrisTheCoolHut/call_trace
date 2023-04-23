@@ -1,5 +1,15 @@
 #include "util.h"
 
+unsigned long main_bin_start_addr;
+unsigned long main_bin_end_addr;
+
+unsigned long stack_start_addr;
+unsigned long stack_end_addr;
+
+unsigned long heap_start_addr;
+unsigned long heap_end_addr;
+bool is_32_bit;
+
 void log_and_exit(char *msg, ...) {
   va_list argList;
 

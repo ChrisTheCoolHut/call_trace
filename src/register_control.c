@@ -14,6 +14,7 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
   unsigned int buf_chunk_int;
   unsigned long addr = 0;
   unsigned int extra_size = 0;
+  unsigned int buf_len = 0;
   char *stage_buf = malloc(1024);
   char *buf = malloc(1024);
   char *ptr = NULL;
@@ -45,9 +46,13 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
                addr_in_stack_or_heap(buf_chunk)) {
 
           snprintf(stage_buf, 1024, "0x%lx -> ", buf_chunk);
-          memcpy(ptr, stage_buf, strlen(stage_buf));
-          ptr += strlen(stage_buf);
-          extra_size += strlen(stage_buf);
+          if (strlen(buf) + strlen(stage_buf) > 1024)
+          {
+            break;
+          }
+          memcpy(ptr, stage_buf, strnlen(stage_buf, 1024));
+          ptr += strnlen(stage_buf, 1024);
+          extra_size += strnlen(stage_buf, 1024);
           stack_argument = buf_chunk;
           if (is_32_bit)
             buf_chunk = buf_chunk & 0xFFFFFFFF;
@@ -59,8 +64,13 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
          * While there is more printable character, keep
          * reading from the child process
          */
-        while (strlen((char *)&buf_chunk) == word_size) {
+        while (strnlen((char *)&buf_chunk, 1024) == word_size) {
           buf_chunk_int = buf_chunk;
+
+          if (strlen(buf) + word_size > 1024)
+          {
+            break;
+          }
 
           if (is_32_bit) {
             memcpy(ptr, &buf_chunk_int, word_size);
@@ -75,8 +85,12 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
             buf_chunk = buf_chunk & 0xFFFFFFFF;
           }
         }
-        memcpy(ptr, &buf_chunk, strlen((char *)&buf_chunk));
 
+        if (strlen(buf) + word_size < (1024 + 1))
+        {
+          memcpy(ptr, &buf_chunk, strnlen((char *)&buf_chunk, 1024));
+        }
+        
         printf("\t[0x%lx] 0x%lx -> ", stack_argument, stack_argument);
         print_alnum_string(buf);
         printf(" : [%lX]\n", (long unsigned int)buf);
@@ -84,7 +98,7 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
         memset(buf, '\x00', 1024);
         ptr = buf;
       } else {
-        printf("\t[0x%lx] 0x%lX\n", stack_argument, stack_argument);
+        // printf("\t[0x%lx] 0x%lX\n", stack_argument, stack_argument);
       }
     }
   } else {
@@ -111,9 +125,14 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
                addr_in_stack_or_heap(buf_chunk)) {
 
           snprintf(stage_buf, 1024, "0x%lx -> ", buf_chunk);
-          memcpy(ptr, stage_buf, strlen(stage_buf));
-          ptr += strlen(stage_buf);
-          extra_size += strlen(stage_buf);
+          // If there room to copy?
+          if (strlen(buf) + strlen(stage_buf) > 1024)
+          {
+            break;
+          }
+          memcpy(ptr, stage_buf, strnlen(stage_buf, 1024));
+          ptr += strnlen(stage_buf, 1024);
+          extra_size += strnlen(stage_buf, 1024);
           addr = buf_chunk;
           buf_chunk = ptrace(PTRACE_PEEKTEXT, child_pid, addr, 0);
           memset(stage_buf, '\x00', 1024);
@@ -123,16 +142,25 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
          * While there is more printable character, keep
          * reading from the child process
          */
-        while (strlen((char *)&buf_chunk) >= word_size) {
+        while (strnlen((char *)&buf_chunk, 1024) >= word_size) {
           buf_chunk_int = buf_chunk;
 
+          if (strlen(buf) + word_size > 1024)
+          {
+            break;
+          }
           memcpy(ptr, &buf_chunk, word_size);
 
           ptr += word_size;
           buf_chunk = ptrace(PTRACE_PEEKTEXT, child_pid,
                              addr + (ptr - buf - extra_size), 0);
         }
-        memcpy(ptr, &buf_chunk, strlen((char *)&buf_chunk));
+
+        if (strlen(buf) + word_size < (1024 + 1))
+        {
+          memcpy(ptr, &buf_chunk, strnlen((char *)&buf_chunk, 1024));
+        }
+        
 
         printf("\t[%s] 0x%lx -> ", names[i], (long unsigned int)addr);
         print_alnum_string(buf);
@@ -141,8 +169,11 @@ void dump_regs(struct user_regs_struct *regs, pid_t child_pid) {
         memset(buf, '\x00', 1024);
         ptr = buf;
       } else {
-        printf("\t[%s] 0x%lX\n", names[i], (long unsigned int)addr);
+        // printf("\t[%s] 0x%lX\n", names[i], (long unsigned int)addr);
       }
     }
+    if (regs_dump) free(regs_dump);
   }
+  if (buf) free(buf);
+  if (stage_buf) free(stage_buf);
 }
