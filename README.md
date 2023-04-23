@@ -5,6 +5,7 @@ This utility uses the `ptrace` API to launch and attach to process and inspect i
 It will log call functions and display their first 4 argument for both i386 and amd64 binaries/
 
 ```bash
+$ sudo apt-get install libcapstone-dev
 $ make
 $ ./build/call_trace 
 [-] Usage ./build/call_trace <program> [program args]
