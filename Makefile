@@ -6,6 +6,7 @@ SRC_FOLDER = src/
 SOURCES := $(shell find $(SRC_FOLDER) -name '*.c')
 
 call_trace: src/call_trace.c
+	mkdir build
 	$(CC) $(CFLAGS) $(LDFLAGS) -I$(HEADERDIR) -I$(dir $<) $(SOURCES) -l$(LIBNAME) -o build/$@
 
 clean:
